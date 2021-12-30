@@ -1,0 +1,17 @@
+{
+  "name": "dataStructure",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/enmeen/dataStructure.git",
+  "author": "desen",
+  "license": "MIT",
+  "scripts": {
+    "hash": "ts-node ./src/hash.ts",
+    "linkedList": "ts-node ./src/linkedList.ts",
+    "circularLinkedList": "ts-node ./src/circularLinkedList.ts"
+  },
+  "dependencies": {
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
+  }
+}
