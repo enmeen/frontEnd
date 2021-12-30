@@ -85,8 +85,8 @@ export class Cllist {
 function solvePro() {
 	let cllist = new Cllist();
 	let n = 40; // 总人数n
-    let m = 2; // 第m个人
-    let left = 2; // 留下left个
+	let m = 2; // 第m个人
+	let left = 2; // 留下left个
 	let item = "0";
 
 	for (let i = 1; i < n; i++) {
@@ -97,7 +97,7 @@ function solvePro() {
 		cllist.insert(new Node(`${i}`), previousNodeElement);
 	}
 
-    // 总计n个人，开始 kill 每隔m个人，直至留下left个人
+	// 总计n个人，开始 kill 每隔m个人，直至留下left个人
 	while (cllist.size > left) {
 		let nextNode = cllist.remove(item, m);
 		item = nextNode.element;
@@ -105,4 +105,10 @@ function solvePro() {
 	}
 }
 
-solvePro(cllist);
+/**
+ * 传说在公元 1 世纪的犹太战争中，犹太历史学家弗拉维奥 · 约瑟夫斯和他的 40 个同胞 被罗马士兵包围。
+ * 犹太士兵决定宁可自杀也不做俘虏，于是商量出了一个自杀方案。他 们围成一个圈，从一个人开始，数到第三个人时将第三个人杀死，然后再数，直到杀光 所有人。
+ * 约瑟夫和另外一个人决定不参加这个疯狂的游戏，他们快速地计算出了两个位 置，站在那里得以幸存。
+ * 写一段程序将 n 个人围成一圈，并且第 m 个人会被杀掉，计算 一圈人中哪两个人最后会存活。使用循环链表解决该问题。
+ */
+solvePro();
