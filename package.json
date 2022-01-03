@@ -8,7 +8,9 @@
   "scripts": {
     "hash": "ts-node ./src/hash.ts",
     "linkedList": "ts-node ./src/linkedList.ts",
-    "circularLinkedList": "ts-node ./src/circularLinkedList.ts"
+    "circularLinkedList": "ts-node ./src/circularLinkedList.ts",
+    "reverseLinkedList": "ts-node ./src/reverseLinkedList.ts",
+    "main": "ts-node ./src/linkedList/main.ts"
   },
   "dependencies": {
     "ts-node": "^10.4.0",
