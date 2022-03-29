@@ -10,3 +10,7 @@
    4. prototypePattern
    5. simpleFactoryPattern
    6. singletonPattern
+3. algorithm
+   1. bubbleSort
+4. js
+   1. curry
