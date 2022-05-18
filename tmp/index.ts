@@ -19,11 +19,12 @@ function c() {
 // 	await c();
 // }
 
-function* a(): any {
-	let vb = yield b();
-	yield c();
-}
+setTimeout(() => {
+	console.log(1)
+	Promise.resolve().then(()=>{ console.log('p1')})
+}, 1000);
 
-for (let k of a()) {
-	console.log(k);
-}
+setTimeout(() => {
+	console.log(2)
+	Promise.resolve().then(()=>{ console.log('p2')})
+}, 1000);
