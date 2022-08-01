@@ -44,6 +44,7 @@ class Scheduler {
         this.queue.push(task); // 往等待队列中添加
         return this.schedule();
     }
+    
     schedule() {
         if (this.run.length < this.count && this.queue.length) {
             // 如果执行队列中仍有空余则取出队列头部任务并塞入
@@ -54,7 +55,7 @@ class Scheduler {
             this.run.push(promise);
             return promise;
         }else{
-            // 已经达到并发上线了
+            // 已经达到并发上限了
             Promise.race(this.run).then(()=>{
                 this.schedule();
             })

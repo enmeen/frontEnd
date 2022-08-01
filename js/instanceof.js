@@ -37,5 +37,18 @@ function _instanceof(obj, constructor) {
     return false
 }
 
+function _instanceofV2(obj, ctx) {
+    let right = ctx.prototype;
+    let left = Object.getPrototypeOf(obj);
+    while (left) {
+        if (left === right) {
+            return true;
+        } else {
+            left = Object.getPrototypeOf(left);
+        }
+    }
+    return false;
+}
+
 console.log(_instanceof(a, A))
-console.log(_instanceof(a, Base))
+console.log(_instanceofV2(a, Base))

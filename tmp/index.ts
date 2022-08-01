@@ -14,10 +14,10 @@ function c() {
 	});
 }
 
-// export async function a() {
-// 	await b();
-// 	await c();
-// }
+export async function a() {
+	await b();
+	await c();
+}
 
 setTimeout(() => {
 	console.log(1)

@@ -1,22 +1,61 @@
-// let nums = [1, 2, 3, 4, 5, 6]
-// for (let i = 0; i < nums.length; i++) {
-//     Promise.resolve().then(function(){
-//         console.log(i)
-//     })
-// }
+console.log('script start')
 
+async function async1() {
+  await async2()
+  console.log('async1 end')
+}
+async function async2() {
+  console.log('async2 end')
+}
+async1()
 
-// function Person(){}
+setTimeout(function () {
+  console.log('setTimeout')
+}, 0)
 
-// let p = new Person();
+new Promise(resolve => {
+  console.log('Promise')
+  resolve()
+})
+  .then(function () {
+    console.log('promise1')
+  })
+  .then(function () {
+    console.log('promise2')
+  })
 
-// p => Person.prototype => Object.prototype => null
- 
-// p.__proto__ === Person.prototype
+console.log('script end')
+/******************************* */
 
-// Person.__proto__ = Function.prototype => Object.prototype
+console.log('script start');
 
-let api = require('./commonjs/commonjs/commonjs');
-console.log(api.count);
-api.add();
-console.log(api.count);
+function async1() {
+  async2().then(()=>{
+    console.log('async1 end') // 后面执行
+  })
+}
+
+function async2() {
+  return new Promise((resolve) => {
+    console.log('async2 end')
+    resolve();
+  })
+}
+async1()
+
+setTimeout(function () {
+  console.log('setTimeout')
+}, 0);
+
+new Promise(resolve => {
+  console.log('Promise')
+  resolve()
+})
+  .then(function () {
+    console.log('promise1')
+  })
+  .then(function () {
+    console.log('promise2')
+  })
+
+console.log('script end')

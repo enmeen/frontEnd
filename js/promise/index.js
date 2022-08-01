@@ -5,7 +5,7 @@
 /**
  * 1. 3种状态
  * 2. 1个执行器
- * 3. then + 链式调用
+ * 3. then + 链式调用（then像是依赖收集器）
  * 4. 成功和失败的结果存储
  * 5. 支持异步
  * 
@@ -46,7 +46,8 @@ class MyPromise {
             this.reject(err)
         }
     }
-
+    // 在pending阶段会收集里面的回调
+    // 在fulfilled阶段会直接执行
     then(onFulfilled, onRejected) {
         const promise2 = new MyPromise((resolve, reject) => {
             switch (this.state) {
@@ -70,10 +71,8 @@ class MyPromise {
             }
         })
         return promise2;
-
-
     }
-
+    // 异步事件完成，触发当中的回调
     resolve = (value) => {
         if (this.state === PENDING) {
             this.state = FULFILLED;
