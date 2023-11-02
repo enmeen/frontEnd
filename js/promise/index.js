@@ -1,114 +1,154 @@
-/**
- * 自己实现的promise
- * 参考：https://juejin.cn/post/6945319439772434469#heading-21
- */
-/**
- * 1. 3种状态
- * 2. 1个执行器
- * 3. then + 链式调用（then像是依赖收集器）
- * 4. 成功和失败的结果存储
- * 5. 支持异步
- * 
- * 支持异步
- * 1. resolve函数是promise内部定义的，所以当resolve函数执行时，理论上来说就是拿到结果了
- * 2. 所以我们要做的事情就是提前在then的时候保存下来，然后异步回调发生时，resolve能够拿到then注册的函数，并执行
- * 
- * 支持then多次调用
- * 1. 用数组来保存then的所有回调函数
- * 2. 在resolve执行时，遍历触发
- * 
- * 支持then链式调用
- * 1. 需要返回一个promise对象
- * 2. onFulfilled回调因为是用户传入的，所以有2种情况。1. promise对象，2. 普通值
- * 3. 利用事件循环机制，创建一个异步函数等待promise完成初始化
- * 
- * 错误捕获
- * 1. 执行器报错
- * 2. then内的报错
- * 3. catch内的报错
- * 4. 利用try...catch捕获
- */
-const PENDING = 'pending';
 const FULFILLED = 'fulfilled';
 const REJECTED = 'rejected';
+const PENDING = 'pending';
+
+/**
+ * 手写promise，考察知识点
+ * 1. 函数作为入参，传给传入的函数（解析器）
+ * 2. 事件循环机制（对通过then传入的回调进行封装，保障执行顺序）
+ * 3. 链式调用的实现
+ */
 
 class MyPromise {
-    state = PENDING;
-    value = null;
-    reason = null;
-    onFulfilledCallbackList = []; // 异步调用的话，需要将回调先保存起来
-    onRejectedCallbackList = [];
-
     constructor(executor) {
+        this.status = PENDING;
+        this.value = ''; // 存储正常返回的值存储
+        this.reason = ''; // 存储错误返回的值
+
+        this.onResolveCbs = [];
+        this.onRejectCbs = [];
+        // 1. 改变状态（需要判断是否是pending状态）
+        // 2. 记录值
+        // 3. 触发回调钩子（then时存储的）
+        const resolve = (value) => {
+            if (this.status === PENDING) {
+                this.status = FULFILLED;
+                this.value = value;
+                this.onResolveCbs.forEach(cb => cb(this.value))
+            }
+
+        }
+        const reject = (error) => {
+            if (this.status === PENDING) {
+                this.status = REJECTED;
+                this.reason = error;
+                this.onRejectCbs.forEach(cb => cb(this.reason))
+            }
+        }
         try {
-            executor(this.resolve, this.reject)
-        } catch (err) {
-            this.reject(err)
+            // 这一步对我不太好理解的，由于传入的是一个解释器
+            executor(resolve, reject)
+        } catch (e) {
+            reject(e);
         }
     }
-    // 在pending阶段会收集里面的回调
-    // 在fulfilled阶段会直接执行
-    then(onFulfilled, onRejected) {
+    // 1. 首先要判断传入的类型，默认可以是函数 or 值 的
+    // 2. 支持链式，则必须返回一个新的同类型
+    then(onResolve, onReject) {
+        onResolve = typeof onResolve === 'function' ? onResolve : (onResolve) => onResolve;
+        onReject = typeof onReject === 'function' ? onReject : (reason) => { throw reason };
+
         const promise2 = new MyPromise((resolve, reject) => {
-            switch (this.state) {
-                case FULFILLED:
+            // 已经结束了，那执行传入的onResolve即可（注意要放到下个任务中）
+            // 也就是说，通过then方法传进来的函数，会在内部再包裹一层，推到微任务队列中
+            const handleResolve = () => {
+                // 放到微队列中
+                queueMicrotask(() => {
                     try {
-                        queueMicrotask(() => {
-                            const x = onFulfilled(this.value); // 这里可能是promise也能是普通返回值
-                            resolvePromise(promise2, x, resolve, reject);
-                        });
-                    } catch (err) {
-                        reject(err)
+                        const x = onResolve(this.value);
+                        this.resolvePromise(promise2, x, resolve, reject);
+                    } catch (e) {
+                        reject(e);
                     }
-                    break;
-                case REJECTED:
-                    onRejected(this.fail);
-                    break;
-                case PENDING:
-                    this.onFulfilledCallbackList.push(onFulfilled);
-                    this.onRejectedCallbackList.push(onRejected);
-                    break;
+                })
+            }
+
+            const handleReject = () => {
+                queueMicrotask(() => {
+                    try {
+                        const x = onReject(this.value);
+                        this.resolvePromise(promise2, x, resolve, reject);
+                    } catch (e) {
+                        reject(e);
+                    }
+                })
+            }
+
+            if (this.status === FULFILLED) {
+                handleResolve();
+            }
+
+            if (this.status === REJECTED) {
+                handleReject();
+            }
+
+            if (this.status === PENDING) {
+                this.onResolveCbs.push(handleResolve);
+                this.onRejectCbs.push(handleReject);
             }
         })
+
         return promise2;
     }
-    // 异步事件完成，触发当中的回调
-    resolve = (value) => {
-        if (this.state === PENDING) {
-            this.state = FULFILLED;
-            this.value = value;
-
-            while (this.onFulfilledCallbackList.length) {
-                let onFulfilledCallback = this.onFulfilledCallbackList.shift();
-                onFulfilledCallback && onFulfilledCallback(this.value);
-            }
+    // 1. 判断 x === promise，防止循环引用，通过reject抛出错误
+    // 2. 判断 x === new Promise，判断是否是新的promise，直接调用即可
+    // 3. thenable对象的调用
+    resolvePromise(promise2, x, resolve, reject) {
+        if (promise2 === x) {
+            reject(new TypeError('存在循环引用'))
         }
-    }
-
-    reject = (e) => {
-        if (this.state === PENDING) {
-            this.state = REJECTED;
-            this.reason = e;
-
-            while (this.onRejectedCallbackList.length) {
-                let onRejectedCallbackList = this.onRejectedCallbackList.shift();
-                onRejectedCallbackList(this.reason);
+        if (x instanceof MyPromise) {
+            x.then(resolve, reject)
+        } else if (typeof x === 'object' || typeof x === 'function') {
+            if (x === null) {
+                resolve(x);
             }
+            let then;
+
+            try {
+                then = x.then;
+            } catch (err) {
+                reject(err)
+            }
+            if (typeof then === 'function') {
+                // 返回一个thenable对象，说实话比较少见，一般用不到
+                // called 用了一个闭包，防止多次执行
+                let called = false;
+                try {
+                    then.call(x, value => {
+                        if (called) return;
+                        called = true;
+                        this.resolvePromise(promise2, value, resolve, reject);
+                    }, reason => {
+                        if (called) return;
+                        called = true;
+                        this.resolvePromise(promise2, reason, resolve, reject);
+                    })
+                } catch (err) {
+                    if (called) return;
+                    reject(err);
+                }
+            } else {
+                resolve(x)
+            }
+
+        } else {
+            resolve(x)
         }
     }
 }
 
-function resolvePromise(promise2, x, resolve, reject) {
-    if (promise2 === x) {
-        return reject(new TypeError('循环引用'));
-    }
-    if (x instanceof MyPromise) {
-        // 传入的promise对象
-        x.then(resolve, reject);
-    } else {
-        // 普通值
-        resolve(x);
-    }
-}
+const p = new MyPromise((resolve, reject) => {
+    setTimeout(() => {
+        resolve(1);
+    }, 1000)
+});
 
-export default MyPromise;
+// 这里的then执行时，状态，执行时会存储在promise的cbs中
+p.then((val) => { console.log(val) })
+
+
+// 这里的then执行时，状态已经确定，会直接执行
+setTimeout(() => {
+    p.then((val) => { console.log(3) })
+}, 2000)
