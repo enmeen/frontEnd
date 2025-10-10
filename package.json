@@ -5,6 +5,7 @@
   "repository": "https://github.com/enmeen/dataStructure.git",
   "author": "desen",
   "license": "MIT",
+  "type": "module",
   "scripts": {},
   "dependencies": {
     "ts-node": "^10.4.0",

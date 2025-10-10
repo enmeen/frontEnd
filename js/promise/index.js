@@ -45,7 +45,7 @@ class MyPromise {
     // 1. 首先要判断传入的类型，默认可以是函数 or 值 的
     // 2. 支持链式，则必须返回一个新的同类型
     then(onResolve, onReject) {
-        onResolve = typeof onResolve === 'function' ? onResolve : (onResolve) => onResolve;
+        onResolve = typeof onResolve === 'function' ? onResolve : (x) => x;
         onReject = typeof onReject === 'function' ? onReject : (reason) => { throw reason };
 
         const promise2 = new MyPromise((resolve, reject) => {
@@ -138,17 +138,21 @@ class MyPromise {
     }
 }
 
-const p = new MyPromise((resolve, reject) => {
-    setTimeout(() => {
-        resolve(1);
-    }, 1000)
-});
+// const p = new MyPromise((resolve, reject) => {
+//     setTimeout(() => {
+//         resolve(1);
+//     }, 1000)
+// });
 
-// 这里的then执行时，状态，执行时会存储在promise的cbs中
-p.then((val) => { console.log(val) })
+// // 这里的then执行时，状态，执行时会存储在promise的cbs中
+// p.then((val) => { console.log(val) })
 
 
-// 这里的then执行时，状态已经确定，会直接执行
-setTimeout(() => {
-    p.then((val) => { console.log(3) })
-}, 2000)
+
+
+// // 这里的then执行时，状态已经确定，会直接执行
+// setTimeout(() => {
+//     p.then((val) => { console.log(3) })
+// }, 2000)
+
+export default MyPromise
