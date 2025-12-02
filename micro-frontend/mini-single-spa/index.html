@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Single-SPA - 微前端框架演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 40px 20px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .demo-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .demo-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .demo-header .status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status.running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: -2px;
+        }
+
+        .nav-tab:hover {
+            color: #333;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .nav-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .control-group h4 {
+            margin-bottom: 10px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+        }
+
+        .app-container {
+            min-height: 400px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .app-container.has-app {
+            border-style: solid;
+            border-color: #28a745;
+            background: white;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .info-card h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .info-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-card li {
+            padding: 5px 0;
+            color: #6c757d;
+        }
+
+        .info-card li:before {
+            content: "→ ";
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .route-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .route-info strong {
+            color: #1976d2;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Mini Single-SPA</h1>
+            <p>简化版微前端框架 - 专注核心功能，易于学习和理解</p>
+        </div>
+
+        <!-- 基础演示 -->
+        <div class="demo-section">
+            <div class="demo-header">
+                <h2>📱 微前端应用演示</h2>
+                <div class="status stopped" id="framework-status">
+                    <span class="status-indicator offline"></span>
+                    框架未启动
+                </div>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('overview')">概览</button>
+                <button class="nav-tab" onclick="switchTab('app1')">应用1 (计数器)</button>
+                <button class="nav-tab" onclick="switchTab('app2')">应用2 (待办事项)</button>
+                <button class="nav-tab" onclick="switchTab('router')">路由管理</button>
+                <button class="nav-tab" onclick="switchTab('lifecycle')">生命周期</button>
+            </div>
+
+            <!-- 概览标签页 -->
+            <div class="tab-content active" id="overview-tab">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <h4>🎯 框架控制</h4>
+                        <button class="btn btn-success" onclick="startFramework()">启动框架</button>
+                        <button class="btn btn-danger" onclick="stopFramework()">停止框架</button>
+                        <button class="btn btn-warning" onclick="resetFramework()">重置框架</button>
+                    </div>
+
+                    <div class="control-group">
+                        <h4>📊 应用管理</h4>
+                        <button class="btn btn-primary" onclick="registerApps()">注册应用</button>
+                        <button class="btn btn-info" onclick="showAppStatus()">查看状态</button>
+                    </div>
+
+                    <div class="control-group">
+                        <h4>🔗 快速导航</h4>
+                        <button class="btn btn-info" onclick="navigate('/app1')">访问应用1</button>
+                        <button class="btn btn-info" onclick="navigate('/app2')">访问应用2</button>
+                        <button class="btn btn-info" onclick="navigate('/')">返回首页</button>
+                    </div>
+                </div>
+
+                <div class="app-container" id="main-app-container">
+                    <div>
+                        <h3>🎯 欢迎使用 Mini Single-SPA</h3>
+                        <p>这是一个专注于核心功能的微前端框架演示</p>
+                        <p style="margin-top: 10px; font-size: 14px;">点击上方"启动框架"开始体验</p>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>🚀 核心特性</h4>
+                        <ul>
+                            <li>应用注册与生命周期管理</li>
+                            <li>基于路由的应用加载</li>
+                            <li>沙箱隔离与安全加载</li>
+                            <li>事件驱动架构</li>
+                            <li>开发友好的调试工具</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-card">
+                        <h4>📚 学习重点</h4>
+                        <ul>
+                            <li>微前端架构原理</li>
+                            <li>应用生命周期理解</li>
+                            <li>路由管理机制</li>
+                            <li>沙箱隔离技术</li>
+                            <li>应用间通信方式</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 应用1标签页 -->
+            <div class="tab-content" id="app1-tab">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <h4>🎯 应用控制</h4>
+                        <button class="btn btn-primary" onclick="loadApp1()">加载应用1</button>
+                        <button class="btn btn-danger" onclick="unloadApp1()">卸载应用1</button>
+                    </div>
+                </div>
+
+                <div class="app-container" id="app1-container">
+                    <div>
+                        <h3>🎯 计数器应用 (App1)</h3>
+                        <p>点击"加载应用1"来体验这个简单的计数器微应用</p>
+                    </div>
+                </div>
+
+                <div class="code-block">
+// App1 应用注册示例
+import { registerApplication, start } from './src/core/single-spa.js';
+
+registerApplication(
+  'app1',
+  () => import('./src/apps/app1/main.js'),
+  () => window.location.pathname.startsWith('/app1')
+);
+
+start();
+                </div>
+            </div>
+
+            <!-- 应用2标签页 -->
+            <div class="tab-content" id="app2-tab">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <h4>📝 应用控制</h4>
+                        <button class="btn btn-primary" onclick="loadApp2()">加载应用2</button>
+                        <button class="btn btn-danger" onclick="unloadApp2()">卸载应用2</button>
+                    </div>
+                </div>
+
+                <div class="app-container" id="app2-container">
+                    <div>
+                        <h3>📝 待办事项应用 (App2)</h3>
+                        <p>点击"加载应用2"来体验这个功能完整的待办事项微应用</p>
+                    </div>
+                </div>
+
+                <div class="code-block">
+// App2 应用注册示例
+registerApplication(
+  'app2',
+  () => import('./src/apps/app2/main.js'),
+  () => window.location.pathname.startsWith('/app2'),
+  { theme: 'dark', locale: 'zh-CN' }  // 自定义属性
+);
+                </div>
+            </div>
+
+            <!-- 路由管理标签页 -->
+            <div class="tab-content" id="router-tab">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <h4>🧭 路由控制</h4>
+                        <button class="btn btn-info" onclick="showCurrentRoute()">当前路由</button>
+                        <button class="btn btn-primary" onclick="showRouteHistory()">路由历史</button>
+                    </div>
+                </div>
+
+                <div class="route-info">
+                    <strong>当前URL:</strong> <span id="current-url">-</span><br>
+                    <strong>匹配的应用:</strong> <span id="matched-apps">-</span><br>
+                    <strong>路由参数:</strong> <span id="route-params">-</span>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>🎯 精确路由匹配</h3>
+                        <p>支持多种路由匹配策略，包括精确匹配、前缀匹配和正则表达式匹配</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔄 动态路由更新</h3>
+                        <p>监听浏览器导航事件，自动触发应用的加载和卸载</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生命周期标签页 -->
+            <div class="tab-content" id="lifecycle-tab">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <h4>🔄 生命周期</h4>
+                        <button class="btn btn-info" onclick="showLifecycleStats()">生命周期统计</button>
+                        <button class="btn btn-warning" onclick="clearLifecycleHistory()">清除历史</button>
+                    </div>
+                </div>
+
+                <div id="lifecycle-info">
+                    <div class="code-block">
+// 生命周期阶段
+1. NOT_LOADED    → 应用已注册但未加载
+2. LOADING        → 正在加载应用代码
+3. NOT_MOUNTED    → 应用已加载但未挂载
+4. MOUNTING       → 正在挂载应用到DOM
+5. MOUNTED        → 应用已挂载并运行中
+6. UNMOUNTING     → 正在从DOM卸载应用
+7. UNLOADING      → 正在卸载应用代码
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技术特性 -->
+        <div class="demo-section">
+            <div class="demo-header">
+                <h2>🔧 技术特性</h2>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>🎯 专注核心</h3>
+                    <p>移除生产环境的复杂性，专注于微前端的核心概念学习，代码结构清晰易懂</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🔒 沙箱隔离</h3>
+                    <p>提供基础的JavaScript沙箱机制，确保微应用之间的安全隔离</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📊 生命周期管理</h3>
+                    <p>完整的应用生命周期管理，包括bootstrap、mount、unmount等阶段</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🧭 智能路由</h3>
+                    <p>基于URL的应用自动加载和卸载，支持多种路由匹配策略</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🔧 开发友好</h3>
+                    <p>丰富的调试工具和日志系统，便于理解微前端的工作原理</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📚 学习导向</h3>
+                    <p>专为微前端学习设计，每个模块都有详细的注释和说明</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入框架核心模块 -->
+    <script type="module">
+        import { registerApplication, start, getApplications, getAppStatus, on } from './src/core/single-spa.js';
+        import { getCurrentPath, navigateTo, onRouteChange } from './src/core/router.js';
+        import { getLifecycleStats } from './src/core/lifecycle.js';
+
+        // 全局状态
+        let frameworkStarted = false;
+        let appsRegistered = false;
+
+        // 暴露给全局使用
+        window.framework = {
+            registerApplication,
+            start,
+            getApplications,
+            getAppStatus,
+            getCurrentPath,
+            navigateTo,
+            getLifecycleStats
+        };
+
+        window.onRouteChange = onRouteChange;
+
+        // 标签页切换
+        window.switchTab = function(tabName) {
+            // 移除所有活动状态
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // 激活选中的标签页
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        };
+
+        // 框架控制函数
+        window.startFramework = async function() {
+            if (frameworkStarted) {
+                alert('框架已经启动');
+                return;
+            }
+
+            try {
+                if (!appsRegistered) {
+                    await registerApps();
+                }
+
+                start();
+                frameworkStarted = true;
+                updateFrameworkStatus('running');
+                console.log('✅ Mini Single-SPA 框架启动成功');
+            } catch (error) {
+                console.error('❌ 框架启动失败:', error);
+                alert('框架启动失败: ' + error.message);
+            }
+        };
+
+        window.stopFramework = function() {
+            if (!frameworkStarted) {
+                alert('框架未启动');
+                return;
+            }
+
+            // 简单的重置实现
+            location.reload();
+        };
+
+        window.resetFramework = function() {
+            if (confirm('确定要重置框架吗？这将重新加载页面。')) {
+                location.reload();
+            }
+        };
+
+        // 注册应用
+        window.registerApps = async function() {
+            try {
+                // 注册应用1
+                registerApplication(
+                    'app1',
+                    () => import('./src/apps/app1/main.js'),
+                    () => window.location.pathname.startsWith('/app1'),
+                    { theme: 'purple' }
+                );
+
+                // 注册应用2
+                registerApplication(
+                    'app2',
+                    () => import('./src/apps/app2/main.js'),
+                    () => window.location.pathname.startsWith('/app2'),
+                    { theme: 'pink' }
+                );
+
+                appsRegistered = true;
+                console.log('✅ 应用注册成功');
+                return true;
+            } catch (error) {
+                console.error('❌ 应用注册失败:', error);
+                alert('应用注册失败: ' + error.message);
+                return false;
+            }
+        };
+
+        // 应用控制函数
+        window.loadApp1 = async function() {
+            if (!frameworkStarted) {
+                alert('请先启动框架');
+                return;
+            }
+            navigateTo('/app1');
+        };
+
+        window.unloadApp1 = function() {
+            navigateTo('/');
+        };
+
+        window.loadApp2 = async function() {
+            if (!frameworkStarted) {
+                alert('请先启动框架');
+                return;
+            }
+            navigateTo('/app2');
+        };
+
+        window.unloadApp2 = function() {
+            navigateTo('/');
+        };
+
+        // 导航函数
+        window.navigate = function(path) {
+            if (frameworkStarted) {
+                navigateTo(path);
+            } else {
+                window.location.hash = path;
+            }
+        };
+
+        // 信息显示函数
+        window.showAppStatus = function() {
+            const apps = getApplications();
+            const statusInfo = apps.map(app =>
+                `${app.name}: ${getAppStatus(app.name)}`
+            ).join('\n');
+
+            alert('应用状态:\n' + (statusInfo || '无已注册应用'));
+        };
+
+        window.showCurrentRoute = function() {
+            const currentPath = getCurrentPath();
+            document.getElementById('current-url').textContent = currentPath;
+
+            const apps = getApplications();
+            const matchedApps = apps.filter(app => {
+                const activeWhen = app.activeWhen;
+                return typeof activeWhen === 'function' ? activeWhen() : false;
+            });
+
+            document.getElementById('matched-apps').textContent =
+                matchedApps.map(app => app.name).join(', ') || '无匹配应用';
+        };
+
+        window.showRouteHistory = function() {
+            alert('路由历史功能正在开发中...');
+        };
+
+        window.showLifecycleStats = function() {
+            const stats = getLifecycleStats();
+            const statsHtml = `
+                <div class="info-card">
+                    <h4>📊 生命周期统计</h4>
+                    <p><strong>总执行次数:</strong> ${stats.totalExecutions}</p>
+                    <p><strong>成功次数:</strong> ${stats.successCount}</p>
+                    <p><strong>失败次数:</strong> ${stats.errorCount}</p>
+                    <p><strong>平均耗时:</strong> ${stats.averageDuration}ms</p>
+                </div>
+            `;
+            document.getElementById('lifecycle-info').innerHTML = statsHtml;
+        };
+
+        window.clearLifecycleHistory = function() {
+            // 这里应该调用清除历史的方法
+            alert('生命周期历史已清除');
+            location.reload();
+        };
+
+        // 更新框架状态显示
+        function updateFrameworkStatus(status) {
+            const statusElement = document.getElementById('framework-status');
+            if (status === 'running') {
+                statusElement.className = 'status running';
+                statusElement.innerHTML = '<span class="status-indicator online"></span>框架运行中';
+            } else {
+                statusElement.className = 'status stopped';
+                statusElement.innerHTML = '<span class="status-indicator offline"></span>框架未启动';
+            }
+        }
+
+        // 监听路由变化
+        onRouteChange((route, previousRoute) => {
+            console.log('路由变化:', route, previousRoute);
+            showCurrentRoute();
+        });
+
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            console.log('🚀 Mini Single-SPA 演示页面已加载');
+            showCurrentRoute();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Single-SPA - 生命周期演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .panel h3 {
+            margin-bottom: 20px;
+            color: #495057;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .btn.success:hover {
+            background: #218838;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.danger:hover {
+            background: #c82333;
+        }
+
+        .btn.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn.warning:hover {
+            background: #e0a800;
+        }
+
+        .btn.info {
+            background: #17a2b8;
+        }
+
+        .btn.info:hover {
+            background: #138496;
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .app-container {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-container.active {
+            border-style: solid;
+            border-color: #28a745;
+            background: white;
+        }
+
+        .app-container.loading {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .app-container.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .lifecycle-status {
+            background: #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 500;
+        }
+
+        .status-value {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-value.pending {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-value.running {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-value.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-value.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -34px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px #e9ecef;
+        }
+
+        .timeline-item.success::before {
+            background: #28a745;
+        }
+
+        .timeline-item.error::before {
+            background: #dc3545;
+        }
+
+        .timeline-item.warning::before {
+            background: #ffc107;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .timeline-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .timeline-content {
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .hook-list {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .hook-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .hook-item:last-child {
+            border-bottom: none;
+        }
+
+        .hook-name {
+            font-weight: 500;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+        }
+
+        .hook-status {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 生命周期演示</h1>
+            <p>深入理解 Mini Single-SPA 的应用生命周期管理机制</p>
+        </div>
+
+        <div class="demo-grid">
+            <!-- 应用控制面板 -->
+            <div class="panel">
+                <h3>🎮 应用控制</h3>
+
+                <div class="controls">
+                    <button class="btn success" onclick="loadApp()" id="load-btn">
+                        加载应用
+                    </button>
+                    <button class="btn danger" onclick="unloadApp()" id="unload-btn" disabled>
+                        卸载应用
+                    </button>
+                    <button class="btn warning" onclick="reloadApp()" id="reload-btn" disabled>
+                        重新加载
+                    </button>
+                </div>
+
+                <div class="controls">
+                    <button class="btn info" onclick="simulateError()" id="error-btn" disabled>
+                        模拟错误
+                    </button>
+                    <button class="btn" onclick="clearTimeline()">
+                        清除时间线
+                    </button>
+                    <button class="btn" onclick="exportLogs()">
+                        导出日志
+                    </button>
+                </div>
+
+                <div class="lifecycle-status">
+                    <div class="status-item">
+                        <span class="status-label">当前状态:</span>
+                        <span class="status-value pending" id="current-status">NOT_LOADED</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">加载时间:</span>
+                        <span class="status-value" id="load-time">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">挂载时间:</span>
+                        <span class="status-value" id="mount-time">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">总执行时间:</span>
+                        <span class="status-value" id="total-time">-</span>
+                    </div>
+                </div>
+
+                <div class="app-container" id="app-container">
+                    <div>
+                        <h4>📱 应用容器</h4>
+                        <p>点击"加载应用"来开始生命周期演示</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 事件时间线 -->
+            <div class="panel">
+                <h3>📅 事件时间线</h3>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="total-events">0</div>
+                        <div class="metric-label">总事件数</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="success-rate">0%</div>
+                        <div class="metric-label">成功率</div>
+                    </div>
+                </div>
+
+                <div class="timeline" id="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-time">等待中...</div>
+                        <div class="timeline-title">准备开始</div>
+                        <div class="timeline-content">点击"加载应用"来开始生命周期演示</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 全局钩子信息 -->
+        <div class="panel">
+            <h3>🎣 全局生命周期钩子</h3>
+
+            <div class="code-block">
+// 注册全局生命周期钩子的示例代码
+import { registerLifecycleHook, LifecyclePhases } from '../../src/core/lifecycle.js';
+
+// 注册 bootstrap 前置钩子
+registerLifecycleHook(LifecyclePhases.BOOTSTRAP, 'before', (context) => {
+    console.log('应用即将启动:', context.app.name);
+    // 可以在这里进行全局预处理
+});
+
+// 注册 mount 后置钩子
+registerLifecycleHook(LifecyclePhases.MOUNT, 'after', (context) => {
+    console.log('应用挂载完成:', context.app.name);
+    // 可以在这里进行全局后处理
+});
+
+// 注册错误处理钩子
+registerLifecycleHook(LifecyclePhases.UNMOUNT, 'error', (context) => {
+    console.error('应用卸载失败:', context.error);
+    // 全局错误处理逻辑
+});
+            </div>
+
+            <div class="hook-list" id="hook-list">
+                <div class="hook-item">
+                    <span class="hook-name">bootstrap_before</span>
+                    <span class="hook-status">已注册</span>
+                </div>
+                <div class="hook-item">
+                    <span class="hook-name">bootstrap_after</span>
+                    <span class="hook-status">已注册</span>
+                </div>
+                <div class="hook-item">
+                    <span class="hook-name">mount_before</span>
+                    <span class="hook-status">已注册</span>
+                </div>
+                <div class="hook-item">
+                    <span class="hook-name">mount_after</span>
+                    <span class="hook-status">已注册</span>
+                </div>
+                <div class="hook-item">
+                    <span class="hook-name">unmount_before</span>
+                    <span class="hook-status">已注册</span>
+                </div>
+                <div class="hook-item">
+                    <span class="hook-name">unmount_after</span>
+                    <span class="hook-status">已注册</span>
+                </div>
+                <div class="hook-item">
+                    <span class="hook-name">*_error</span>
+                    <span class="hook-status">已注册</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 性能统计 -->
+        <div class="panel">
+            <h3>📊 性能统计</h3>
+
+            <div id="performance-stats">
+                <div style="text-align: center; padding: 40px; color: #6c757d;">
+                    <p>等待应用执行以查看性能统计...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { registerApplication, start, on, AppStatus } from '../../src/core/single-spa.js';
+        import { executeLifecycle, registerLifecycleHook, LifecyclePhases, getLifecycleStats } from '../../src/core/lifecycle.js';
+
+        // 应用状态
+        let currentApp = null;
+        let appStartTime = 0;
+        let events = [];
+
+        // 生命周期钩子注册
+        function registerGlobalHooks() {
+            // Bootstrap 钩子
+            registerLifecycleHook(LifecyclePhases.BOOTSTRAP, 'before', (context) => {
+                addTimelineEvent('before', '应用即将启动', `应用 ${context.app.name} 准备启动`, 'info');
+            });
+
+            registerLifecycleHook(LifecyclePhases.BOOTSTRAP, 'after', (context) => {
+                addTimelineEvent('after', '应用启动完成', `应用 ${context.app.name} 启动阶段完成`, 'success');
+            });
+
+            registerLifecycleHook(LifecyclePhases.BOOTSTRAP, 'error', (context) => {
+                addTimelineEvent('error', '应用启动失败', `应用 ${context.app.name} 启动失败: ${context.error.message}`, 'error');
+            });
+
+            // Mount 钩子
+            registerLifecycleHook(LifecyclePhases.MOUNT, 'before', (context) => {
+                addTimelineEvent('before', '应用即将挂载', `应用 ${context.app.name} 准备挂载到DOM`, 'info');
+            });
+
+            registerLifecycleHook(LifecyclePhases.MOUNT, 'after', (context) => {
+                addTimelineEvent('after', '应用挂载完成', `应用 ${context.app.name} 已成功挂载`, 'success');
+                updateMountTime();
+            });
+
+            registerLifecycleHook(LifecyclePhases.MOUNT, 'error', (context) => {
+                addTimelineEvent('error', '应用挂载失败', `应用 ${context.app.name} 挂载失败: ${context.error.message}`, 'error');
+            });
+
+            // Unmount 钩子
+            registerLifecycleHook(LifecyclePhases.UNMOUNT, 'before', (context) => {
+                addTimelineEvent('before', '应用即将卸载', `应用 ${context.app.name} 准备从DOM卸载`, 'warning');
+            });
+
+            registerLifecycleHook(LifecyclePhases.UNMOUNT, 'after', (context) => {
+                addTimelineEvent('after', '应用卸载完成', `应用 ${context.app.name} 已成功卸载`, 'success');
+            });
+
+            registerLifecycleHook(LifecyclePhases.UNMOUNT, 'error', (context) => {
+                addTimelineEvent('error', '应用卸载失败', `应用 ${context.app.name} 卸载失败: ${context.error.message}`, 'error');
+            });
+        }
+
+        // 创建演示应用
+        function createDemoApp() {
+            return {
+                name: 'lifecycle-demo-app',
+
+                async bootstrap() {
+                    await simulateAsyncOperation('bootstrap', 1000);
+                    updateStatus(AppStatus.LOADING);
+                },
+
+                async mount() {
+                    await simulateAsyncOperation('mount', 1500);
+
+                    const container = document.getElementById('app-container');
+                    container.innerHTML = `
+                        <div style="text-align: center;">
+                            <h3>🎯 演示应用已挂载</h3>
+                            <p>这是一个用于演示生命周期的微应用</p>
+                            <div style="margin-top: 20px; padding: 20px; background: #e3f2fd; border-radius: 8px;">
+                                <p><strong>应用状态:</strong> <span style="color: #28a745;">运行中</span></p>
+                                <p><strong>挂载时间:</strong> ${new Date().toLocaleTimeString()}</p>
+                                <p><strong>版本:</strong> v1.0.0</p>
+                            </div>
+                        </div>
+                    `;
+                    container.className = 'active';
+
+                    updateStatus(AppStatus.MOUNTED);
+                },
+
+                async unmount() {
+                    await simulateAsyncOperation('unmount', 800);
+
+                    const container = document.getElementById('app-container');
+                    container.innerHTML = `
+                        <div>
+                            <h4>📱 应用容器</h4>
+                            <p>应用已卸载，点击"加载应用"重新开始</p>
+                        </div>
+                    `;
+                    container.className = '';
+
+                    updateStatus(AppStatus.NOT_MOUNTED);
+                },
+
+                async update() {
+                    await simulateAsyncOperation('update', 500);
+                    addTimelineEvent('info', '应用更新', '应用属性已更新', 'info');
+                }
+            };
+        }
+
+        // 模拟异步操作
+        function simulateAsyncOperation(operation, duration) {
+            return new Promise((resolve) => {
+                addTimelineEvent('running', `执行${operation}`, `正在执行 ${operation} 操作...`, 'warning');
+
+                setTimeout(() => {
+                    resolve();
+                }, duration);
+            });
+        }
+
+        // 更新应用状态显示
+        function updateStatus(status) {
+            const statusElement = document.getElementById('current-status');
+            statusElement.textContent = status;
+
+            // 更新状态样式
+            statusElement.className = 'status-value';
+            if (status.includes('LOADED') || status.includes('MOUNTED')) {
+                statusElement.classList.add('success');
+            } else if (status.includes('ING')) {
+                statusElement.classList.add('running');
+            } else if (status.includes('ERROR') || status.includes('BROKEN')) {
+                statusElement.classList.add('error');
+            } else {
+                statusElement.classList.add('pending');
+            }
+
+            // 更新按钮状态
+            updateButtonStates(status);
+        }
+
+        // 更新按钮状态
+        function updateButtonStates(status) {
+            const loadBtn = document.getElementById('load-btn');
+            const unloadBtn = document.getElementById('unload-btn');
+            const reloadBtn = document.getElementById('reload-btn');
+            const errorBtn = document.getElementById('error-btn');
+
+            if (status === AppStatus.NOT_LOADED || status === AppStatus.NOT_MOUNTED) {
+                loadBtn.disabled = false;
+                unloadBtn.disabled = true;
+                reloadBtn.disabled = true;
+                errorBtn.disabled = true;
+            } else if (status === AppStatus.MOUNTED) {
+                loadBtn.disabled = true;
+                unloadBtn.disabled = false;
+                reloadBtn.disabled = false;
+                errorBtn.disabled = false;
+            } else {
+                // Loading states
+                loadBtn.disabled = true;
+                unloadBtn.disabled = true;
+                reloadBtn.disabled = true;
+                errorBtn.disabled = true;
+            }
+        }
+
+        // 更新时间显示
+        function updateLoadTime() {
+            const loadTime = document.getElementById('load-time');
+            const duration = Date.now() - appStartTime;
+            loadTime.textContent = `${duration}ms`;
+            loadTime.className = 'status-value success';
+            updateTotalTime();
+        }
+
+        function updateMountTime() {
+            const mountTime = document.getElementById('mount-time');
+            const duration = Date.now() - appStartTime;
+            mountTime.textContent = `${duration}ms`;
+            mountTime.className = 'status-value success';
+            updateTotalTime();
+        }
+
+        function updateTotalTime() {
+            const totalTime = document.getElementById('total-time');
+            const duration = Date.now() - appStartTime;
+            totalTime.textContent = `${duration}ms`;
+            totalTime.className = 'status-value success';
+        }
+
+        // 添加时间线事件
+        function addTimelineEvent(type, title, content, severity = 'info') {
+            const timeline = document.getElementById('timeline');
+            const time = new Date().toLocaleTimeString();
+
+            const event = {
+                time,
+                type,
+                title,
+                content,
+                severity,
+                timestamp: Date.now()
+            };
+
+            events.push(event);
+
+            const timelineItem = document.createElement('div');
+            timelineItem.className = `timeline-item ${severity}`;
+            timelineItem.innerHTML = `
+                <div class="timeline-time">${time}</div>
+                <div class="timeline-title">${title}</div>
+                <div class="timeline-content">${content}</div>
+            `;
+
+            timeline.insertBefore(timelineItem, timeline.firstChild);
+
+            // 限制时间线项目数量
+            while (timeline.children.length > 20) {
+                timeline.removeChild(timeline.lastChild);
+            }
+
+            updateMetrics();
+        }
+
+        // 更新指标
+        function updateMetrics() {
+            const totalEvents = document.getElementById('total-events');
+            const successRate = document.getElementById('success-rate');
+
+            totalEvents.textContent = events.length;
+
+            const successEvents = events.filter(e => e.severity === 'success').length;
+            const rate = events.length > 0 ? Math.round((successEvents / events.length) * 100) : 0;
+            successRate.textContent = `${rate}%`;
+        }
+
+        // 控制函数
+        window.loadApp = async function() {
+            if (currentApp) {
+                addTimelineEvent('warning', '重复加载', '应用已经加载，请先卸载', 'warning');
+                return;
+            }
+
+            appStartTime = Date.now();
+
+            try {
+                currentApp = createDemoApp();
+
+                // 显示加载状态
+                const container = document.getElementById('app-container');
+                container.className = 'loading';
+                container.innerHTML = '<div class="spinner"></div><p style="margin-top: 15px;">正在加载应用...</p>';
+
+                updateStatus(AppStatus.LOADING);
+
+                // 执行生命周期
+                await executeLifecycle(currentApp, LifecyclePhases.BOOTSTRAP);
+                await executeLifecycle(currentApp, LifecyclePhases.MOUNT);
+
+                addTimelineEvent('success', '应用加载完成', '应用已成功加载并挂载', 'success');
+
+            } catch (error) {
+                addTimelineEvent('error', '应用加载失败', error.message, 'error');
+                updateStatus(AppStatus.SKIP_BECAUSE_BROKEN);
+
+                const container = document.getElementById('app-container');
+                container.className = 'error';
+                container.innerHTML = `
+                    <div style="color: #dc3545;">
+                        <h4>❌ 加载失败</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+
+            updatePerformanceStats();
+        };
+
+        window.unloadApp = async function() {
+            if (!currentApp) {
+                addTimelineEvent('warning', '重复卸载', '应用未加载，无法卸载', 'warning');
+                return;
+            }
+
+            try {
+                await executeLifecycle(currentApp, LifecyclePhases.UNMOUNT);
+                currentApp = null;
+
+                addTimelineEvent('success', '应用卸载完成', '应用已成功卸载', 'success');
+
+            } catch (error) {
+                addTimelineEvent('error', '应用卸载失败', error.message, 'error');
+            }
+
+            updatePerformanceStats();
+        };
+
+        window.reloadApp = async function() {
+            await unloadApp();
+            setTimeout(() => {
+                loadApp();
+            }, 500);
+        };
+
+        window.simulateError = function() {
+            if (!currentApp) return;
+
+            // 模拟一个错误
+            throw new Error('这是一个模拟的错误，用于演示错误处理机制');
+        };
+
+        window.clearTimeline = function() {
+            events = [];
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = `
+                <div class="timeline-item">
+                    <div class="timeline-time">等待中...</div>
+                    <div class="timeline-title">准备开始</div>
+                    <div class="timeline-content">点击"加载应用"来开始生命周期演示</div>
+                </div>
+            `;
+            updateMetrics();
+        };
+
+        window.exportLogs = function() {
+            const logData = {
+                events,
+                stats: getLifecycleStats(),
+                exportTime: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(logData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lifecycle-logs-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            addTimelineEvent('info', '日志导出', '生命周期日志已导出', 'success');
+        };
+
+        function updatePerformanceStats() {
+            const stats = getLifecycleStats();
+            const container = document.getElementById('performance-stats');
+
+            container.innerHTML = `
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">${stats.totalExecutions}</div>
+                        <div class="metric-label">总执行次数</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${stats.successCount}</div>
+                        <div class="metric-label">成功次数</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${stats.errorCount}</div>
+                        <div class="metric-label">失败次数</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${stats.averageDuration}ms</div>
+                        <div class="metric-label">平均耗时</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4>各阶段统计</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        ${Object.entries(stats.phaseStats).map(([phase, phaseStats]) => `
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                                <strong>${phase.toUpperCase()}</strong>
+                                <div style="font-size: 14px; margin-top: 5px;">
+                                    执行: ${phaseStats.count} |
+                                    成功: ${phaseStats.successCount} |
+                                    失败: ${phaseStats.errorCount} |
+                                    平均: ${phaseStats.averageDuration}ms
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            registerGlobalHooks();
+            addTimelineEvent('info', '初始化完成', '生命周期演示系统已准备就绪', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微前端示例应用 - App2</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .standalone-mode {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .mode-indicator {
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="standalone-mode">
+        <div class="header">
+            <h1>📝 待办事项应用 (App2)</h1>
+            <p>这是 App2 的独立运行模式</p>
+        </div>
+
+        <div class="content">
+            <div class="mode-indicator">
+                ⚡ 当前运行在独立模式中
+            </div>
+
+            <div id="app2-container">
+                <!-- 微应用内容将在这里渲染 -->
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                <h3>🔧 开发信息</h3>
+                <p><strong>独立模式说明:</strong> 这个页面展示了 App2 在非微前端环境中的运行效果。</p>
+                <p><strong>微前端集成:</strong> 在 mini-single-spa 框架中，这个应用会被动态加载到主应用的容器中。</p>
+
+                <div style="margin-top: 15px;">
+                    <button onclick="loadApp()" style="
+                        background: #f093fb;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        margin-right: 10px;
+                    ">加载应用</button>
+
+                    <button onclick="unloadApp()" style="
+                        background: #dc3545;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                    ">卸载应用</button>
+
+                    <button onclick="resetApp()" style="
+                        background: #28a745;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        margin-left: 10px;
+                    ">重置数据</button>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4>🎯 功能演示</h4>
+                    <ul style="color: #666; font-size: 14px;">
+                        <li>添加新的待办事项</li>
+                        <li>标记任务完成状态</li>
+                        <li>删除不需要的任务</li>
+                        <li>按状态过滤显示</li>
+                        <li>查看任务完成统计</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 模拟加载应用模块
+        let app = null;
+
+        async function loadAppModule() {
+            try {
+                // 在实际环境中，这里会动态导入应用模块
+                // import('./main.js')
+
+                // 为了演示，我们创建一个简化版本的应用逻辑
+                app = {
+                    state: {
+                        todos: [
+                            { id: 1, text: '学习微前端概念', completed: true },
+                            { id: 2, text: '实现 mini-single-spa 框架', completed: true },
+                            { id: 3, text: '创建示例应用', completed: false },
+                            { id: 4, text: '测试应用生命周期', completed: false }
+                        ],
+                        nextId: 5,
+                        isMounted: false,
+                        filter: 'all'
+                    },
+                    container: null,
+
+                    async bootstrap() {
+                        console.log('[App2] Bootstrap');
+                        await new Promise(resolve => setTimeout(resolve, 150));
+                    },
+
+                    async mount() {
+                        console.log('[App2] Mount');
+                        this.state.isMounted = true;
+                        this.render();
+                    },
+
+                    async unmount() {
+                        console.log('[App2] Unmount');
+                        this.state.isMounted = false;
+                        if (this.container) {
+                            this.container.innerHTML = '';
+                        }
+                    },
+
+                    getFilteredTodos() {
+                        switch (this.state.filter) {
+                            case 'active':
+                                return this.state.todos.filter(todo => !todo.completed);
+                            case 'completed':
+                                return this.state.todos.filter(todo => todo.completed);
+                            default:
+                                return this.state.todos;
+                        }
+                    },
+
+                    getActiveTodos() {
+                        return this.state.todos.filter(todo => !todo.completed);
+                    },
+
+                    getCompletedTodos() {
+                        return this.state.todos.filter(todo => todo.completed);
+                    },
+
+                    render() {
+                        this.container = document.getElementById('app2-container');
+                        if (!this.container) return;
+
+                        const filteredTodos = this.getFilteredTodos();
+
+                        this.container.innerHTML = `
+                            <div style="
+                                padding: 20px;
+                                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                                color: white;
+                                border-radius: 8px;
+                            ">
+                                <h3 style="margin: 0 0 20px 0;">📝 待办事项应用</h3>
+
+                                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                                    <input
+                                        type="text"
+                                        id="todo-input"
+                                        placeholder="输入新任务..."
+                                        style="
+                                            flex: 1;
+                                            padding: 10px;
+                                            border: none;
+                                            border-radius: 6px;
+                                            font-size: 14px;
+                                        "
+                                    />
+                                    <button onclick="app.addTodo()" style="
+                                        background: rgba(255,255,255,0.3);
+                                        border: none;
+                                        color: white;
+                                        padding: 10px 20px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                    ">添加</button>
+                                </div>
+
+                                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                                    <button onclick="app.setFilter('all')" style="
+                                        background: ${this.state.filter === 'all' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'};
+                                        border: 1px solid white;
+                                        color: white;
+                                        padding: 6px 12px;
+                                        border-radius: 4px;
+                                        font-size: 12px;
+                                        cursor: pointer;
+                                    ">全部 (${this.state.todos.length})</button>
+                                    <button onclick="app.setFilter('active')" style="
+                                        background: ${this.state.filter === 'active' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'};
+                                        border: 1px solid white;
+                                        color: white;
+                                        padding: 6px 12px;
+                                        border-radius: 4px;
+                                        font-size: 12px;
+                                        cursor: pointer;
+                                    ">进行中 (${this.getActiveTodos().length})</button>
+                                    <button onclick="app.setFilter('completed')" style="
+                                        background: ${this.state.filter === 'completed' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'};
+                                        border: 1px solid white;
+                                        color: white;
+                                        padding: 6px 12px;
+                                        border-radius: 4px;
+                                        font-size: 12px;
+                                        cursor: pointer;
+                                    ">已完成 (${this.getCompletedTodos().length})</button>
+                                </div>
+
+                                <div style="
+                                    background: rgba(255,255,255,0.1);
+                                    border-radius: 6px;
+                                    padding: 15px;
+                                    max-height: 300px;
+                                    overflow-y: auto;
+                                ">
+                                    ${filteredTodos.length === 0
+                                        ? '<div style="text-align: center; padding: 20px; opacity: 0.7;">暂无待办事项</div>'
+                                        : filteredTodos.map(todo => `
+                                            <div style="
+                                                background: rgba(255,255,255,0.1);
+                                                border-radius: 4px;
+                                                padding: 10px;
+                                                margin-bottom: 8px;
+                                                display: flex;
+                                                align-items: center;
+                                                gap: 10px;
+                                                ${todo.completed ? 'opacity: 0.7;' : ''}
+                                            ">
+                                                <input
+                                                    type="checkbox"
+                                                    ${todo.completed ? 'checked' : ''}
+                                                    onchange="app.toggleTodo(${todo.id})"
+                                                    style="cursor: pointer;"
+                                                />
+                                                <span style="flex: 1; ${todo.completed ? 'text-decoration: line-through;' : ''}">
+                                                    ${todo.text}
+                                                </span>
+                                                <button
+                                                    onclick="app.deleteTodo(${todo.id})"
+                                                    style="
+                                                        background: rgba(220, 53, 69, 0.3);
+                                                        border: none;
+                                                        color: white;
+                                                        padding: 4px 8px;
+                                                        border-radius: 4px;
+                                                        font-size: 12px;
+                                                        cursor: pointer;
+                                                    ">删除</button>
+                                            </div>
+                                        `).join('')
+                                    }
+                                </div>
+
+                                <div style="
+                                    margin-top: 15px;
+                                    padding: 10px;
+                                    background: rgba(0,0,0,0.2);
+                                    border-radius: 4px;
+                                    font-size: 14px;
+                                    text-align: center;
+                                ">
+                                    完成率: ${Math.round(this.getCompletedTodos().length / this.state.todos.length * 100) || 0}%
+                                </div>
+                            </div>
+                        `;
+
+                        // 自动聚焦输入框
+                        setTimeout(() => {
+                            const input = document.getElementById('todo-input');
+                            if (input) {
+                                input.focus();
+                                input.addEventListener('keypress', (e) => {
+                                    if (e.key === 'Enter') {
+                                        this.addTodo();
+                                    }
+                                });
+                            }
+                        }, 100);
+                    },
+
+                    addTodo() {
+                        const input = document.getElementById('todo-input');
+                        const text = input?.value?.trim();
+                        if (!text) return;
+
+                        this.state.todos.unshift({
+                            id: this.state.nextId++,
+                            text,
+                            completed: false
+                        });
+
+                        if (input) input.value = '';
+                        this.render();
+                    },
+
+                    toggleTodo(id) {
+                        const todo = this.state.todos.find(t => t.id === id);
+                        if (todo) {
+                            todo.completed = !todo.completed;
+                            this.render();
+                        }
+                    },
+
+                    deleteTodo(id) {
+                        this.state.todos = this.state.todos.filter(todo => todo.id !== id);
+                        this.render();
+                    },
+
+                    setFilter(filter) {
+                        this.state.filter = filter;
+                        this.render();
+                    },
+
+                    reset() {
+                        this.state.todos = [
+                            { id: 1, text: '学习微前端概念', completed: true },
+                            { id: 2, text: '实现 mini-single-spa 框架', completed: true },
+                            { id: 3, text: '创建示例应用', completed: false },
+                            { id: 4, text: '测试应用生命周期', completed: false }
+                        ];
+                        this.state.nextId = 5;
+                        this.state.filter = 'all';
+                        this.render();
+                    }
+                };
+
+                return app;
+            } catch (error) {
+                console.error('加载应用失败:', error);
+            }
+        }
+
+        // 暴露给全局
+        window.loadApp = async function() {
+            if (!app) {
+                app = await loadAppModule();
+            }
+
+            if (app) {
+                await app.bootstrap();
+                await app.mount();
+            }
+        };
+
+        window.unloadApp = async function() {
+            if (app) {
+                await app.unmount();
+            }
+        };
+
+        window.resetApp = function() {
+            if (app) {
+                app.reset();
+            }
+        };
+
+        // 页面加载完成后的说明
+        window.addEventListener('load', () => {
+            console.log('App2 独立模式页面已加载');
+            console.log('可以调用 loadApp()、unloadApp() 和 resetApp() 来测试应用功能');
+        });
+    </script>
+</body>
+</html>

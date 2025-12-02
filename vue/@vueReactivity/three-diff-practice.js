@@ -327,6 +327,7 @@ function quickDiff(oldList, newList, container) {
             const seq = lis(source);
             let s = seq.length - 1;
             let i = count - 1;
+            // 从右往左执行操作（避免索引偏移）
             for (i; i >= 0; i--) {
                 if (source[i] === -1) {
                     // 新增
